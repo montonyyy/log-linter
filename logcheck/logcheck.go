@@ -94,12 +94,16 @@ func checkArg(pass *analysis.Pass, arg ast.Expr) {
 func checkBasicLit(pass *analysis.Pass, arg ast.Expr) {
 	if lit, ok := arg.(*ast.BasicLit); ok {
 		var str string
+		var char rune
 
-		if len(lit.Value) > 2 {
+		if lit.Value != "" {
 			str = lit.Value[1 : len(lit.Value)-1]
 		}
-
-		if unicode.IsUpper(rune(str[0])) {
+		runes := []rune(str)
+		if len(runes) > 0 {
+			char = runes[0]
+		}
+		if unicode.IsUpper(char) {
 			pass.Reportf(lit.Pos(), "contains capital letter")
 		}
 		isLatin := true
@@ -110,7 +114,7 @@ func checkBasicLit(pass *analysis.Pass, arg ast.Expr) {
 				isLatin = false
 				pass.Reportf(lit.Pos(), "contains not an english letter")
 			}
-			if !unicode.IsLetter(v) && !unicode.IsDigit(v) && isSymbol == false {
+			if !unicode.IsLetter(v) && !unicode.IsDigit(v) && !unicode.IsSpace(v) && isSymbol == false {
 				isSymbol = true
 				pass.Reportf(lit.Pos(), "contains symbol letter")
 			}
