@@ -3,10 +3,6 @@ package logcheck
 import (
 	"go/ast"
 	"go/types"
-	"log/slog"
-	"os"
-	"strings"
-	"unicode"
 
 	"golang.org/x/tools/go/analysis"
 )
@@ -17,20 +13,7 @@ var Analyzer = &analysis.Analyzer{
 	Run:  run,
 }
 
-var sensitiveWords string
-
-func getConf() {
-	data, err := os.ReadFile("sens.conf")
-	if err != nil {
-		slog.Info("configuration file for sensitive words not exists. will be used default config")
-		sensitiveWords = "password, apiKey, token"
-		return
-	}
-	sensitiveWords = string(data)
-}
-
 func run(pass *analysis.Pass) (any, error) {
-	getConf()
 	for _, file := range pass.Files {
 		ast.Inspect(file, func(n ast.Node) bool {
 			call, ok := n.(*ast.CallExpr)
@@ -94,33 +77,20 @@ func checkArg(pass *analysis.Pass, arg ast.Expr) {
 func checkBasicLit(pass *analysis.Pass, arg ast.Expr) {
 	if lit, ok := arg.(*ast.BasicLit); ok {
 		var str string
-		var char rune
 
 		if lit.Value != "" {
 			str = lit.Value[1 : len(lit.Value)-1]
 		}
-		runes := []rune(str)
-		if len(runes) > 0 {
-			char = runes[0]
-		}
-		if unicode.IsUpper(char) {
+
+		if HasCapitalLetter(str) {
 			pass.Reportf(lit.Pos(), "contains capital letter")
 		}
-		isLatin := true
-		isSymbol := false
 
-		for _, v := range str {
-			if unicode.IsLetter(v) && !unicode.Is(unicode.Latin, v) && isLatin == true {
-				isLatin = false
-				pass.Reportf(lit.Pos(), "contains not an english letter")
-			}
-			if !unicode.IsLetter(v) && !unicode.IsDigit(v) && !unicode.IsSpace(v) && isSymbol == false {
-				isSymbol = true
-				pass.Reportf(lit.Pos(), "contains symbol letter")
-			}
-			if !isLatin && isSymbol {
-				break
-			}
+		if HasNonEnglish(str) {
+			pass.Reportf(lit.Pos(), "contains not an english letter")
+		}
+		if HasSymbol(str) {
+			pass.Reportf(lit.Pos(), "contains symbol letter")
 		}
 	}
 }
@@ -128,7 +98,7 @@ func checkBasicLit(pass *analysis.Pass, arg ast.Expr) {
 func checkIdent(pass *analysis.Pass, arg ast.Expr) {
 	if ident, ok := arg.(*ast.Ident); ok {
 		val := ident.Name
-		if strings.Contains(sensitiveWords, val) {
+		if HasSensitive(val) {
 			pass.Reportf(ident.Pos(), "contains sensitive data")
 		}
 	}
