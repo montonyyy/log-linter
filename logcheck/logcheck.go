@@ -85,7 +85,6 @@ func checkBasicLit(pass *analysis.Pass, arg ast.Expr) {
 		if HasCapitalLetter(str) {
 			pass.Reportf(lit.Pos(), "contains capital letter")
 		}
-
 		if HasNonEnglish(str) {
 			pass.Reportf(lit.Pos(), "contains not an english letter")
 		}

@@ -39,8 +39,5 @@ func HasSymbol(str string) bool {
 var sensitiveWords = []string{"password", "token", "secret", "apiKey"}
 
 func HasSensitive(val string) bool {
-	if slices.Contains(sensitiveWords, val) {
-		return true
-	}
-	return false
+	return slices.Contains(sensitiveWords, val)
 }
