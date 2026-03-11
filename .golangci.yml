@@ -1,0 +1,10 @@
+linters-settings:
+  custom:
+    loglint:
+      path: ./loglint.so
+      description: "log-linter"
+linters:
+  default: standard
+  enable:
+    - loglint
+  disable-all: true
